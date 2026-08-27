@@ -6,8 +6,9 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.main import app
 
+
 @pytest.fixture(autouse=True)
-async def override_db_dependency() -> AsyncGenerator[None, None]:
+def override_db_dependency():
     """
     Overrides the FastAPI get_db dependency to use a fresh NullPool engine per test.
     This guarantees that every test event loop owns its own database connections
@@ -39,7 +40,6 @@ async def override_db_dependency() -> AsyncGenerator[None, None]:
     app.dependency_overrides[get_db] = _test_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
-    await test_engine.dispose()
 
 
 @pytest.fixture

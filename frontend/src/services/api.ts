@@ -221,3 +221,90 @@ export async function fetchRecentDetections(params?: {
 
   return response.json();
 }
+
+import {
+  SampleFrameInfo,
+  EdgeVisionProcessResponse,
+  PreprocessingOptions,
+} from '../types/edgeVision';
+
+/**
+ * Fetches built-in sample test frame catalog for interactive testing.
+ */
+export async function fetchSampleFrames(): Promise<SampleFrameInfo[]> {
+  const url = `${API_BASE}/api/v1/edge-vision/samples`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sample frames: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Runs the edge vision pipeline on a built-in test scenario on demand.
+ */
+export async function processSampleFrame(
+  sampleId: string,
+  options?: PreprocessingOptions
+): Promise<EdgeVisionProcessResponse> {
+  const query = new URLSearchParams();
+  if (options?.camera_id) query.append('camera_id', options.camera_id);
+  if (options?.enable_clahe !== undefined) query.append('enable_clahe', options.enable_clahe.toString());
+  if (options?.clahe_clip_limit !== undefined) query.append('clahe_clip_limit', options.clahe_clip_limit.toString());
+  if (options?.enable_denoising !== undefined) query.append('enable_denoising', options.enable_denoising.toString());
+  if (options?.enable_sharpening !== undefined) query.append('enable_sharpening', options.enable_sharpening.toString());
+  if (options?.sharpen_strength !== undefined) query.append('sharpen_strength', options.sharpen_strength.toString());
+  if (options?.enable_glare_reduction !== undefined) query.append('enable_glare_reduction', options.enable_glare_reduction.toString());
+
+  const url = `${API_BASE}/api/v1/edge-vision/samples/${encodeURIComponent(sampleId)}/process${
+    query.toString() ? `?${query.toString()}` : ''
+  }`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Edge Vision processing failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Uploads a local image file and processes it through the Edge Vision pipeline.
+ */
+export async function processUploadedFrame(
+  file: File,
+  options?: PreprocessingOptions
+): Promise<EdgeVisionProcessResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (options?.camera_id) formData.append('camera_id', options.camera_id);
+  if (options?.enable_clahe !== undefined) formData.append('enable_clahe', options.enable_clahe.toString());
+  if (options?.clahe_clip_limit !== undefined) formData.append('clahe_clip_limit', options.clahe_clip_limit.toString());
+  if (options?.enable_denoising !== undefined) formData.append('enable_denoising', options.enable_denoising.toString());
+  if (options?.enable_sharpening !== undefined) formData.append('enable_sharpening', options.enable_sharpening.toString());
+  if (options?.sharpen_strength !== undefined) formData.append('sharpen_strength', options.sharpen_strength.toString());
+  if (options?.enable_glare_reduction !== undefined) formData.append('enable_glare_reduction', options.enable_glare_reduction.toString());
+
+  const url = `${API_BASE}/api/v1/edge-vision/process`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Upload processing failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
