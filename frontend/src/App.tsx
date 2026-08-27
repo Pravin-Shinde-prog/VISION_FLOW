@@ -8,8 +8,8 @@ import { TrajectoryEnginePage } from './pages/TrajectoryEnginePage';
 import { LawEnforcementPage } from './pages/LawEnforcementPage';
 import { UrbanAnalyticsPage } from './pages/UrbanAnalyticsPage';
 import { CameraNetworkPage } from './pages/CameraNetworkPage';
-import { checkBackendHealth } from './services/api';
-import { SystemStatusState } from './types/health';
+import { checkBackendHealth, checkDatabaseHealth } from './services/api';
+import { SystemStatusState, DatabaseStatusState } from './types/health';
 
 export const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewKey>('dashboard');
@@ -20,9 +20,18 @@ export const App: React.FC = () => {
     lastChecked: null,
     latencyMs: null,
   });
+  const [dbStatusState, setDbStatusState] = useState<DatabaseStatusState>({
+    status: 'loading',
+    data: null,
+    error: null,
+    latencyMs: null,
+  });
 
   const performHealthCheck = useCallback(async () => {
     setStatusState((prev) => ({ ...prev, status: 'loading' }));
+    setDbStatusState((prev) => ({ ...prev, status: 'loading' }));
+
+    // 1. Check FastAPI Backend Health
     try {
       const { data, latencyMs } = await checkBackendHealth();
       setStatusState({
@@ -42,6 +51,25 @@ export const App: React.FC = () => {
         latencyMs: null,
       });
     }
+
+    // 2. Check Database & PostGIS Health
+    try {
+      const dbData = await checkDatabaseHealth();
+      setDbStatusState({
+        status: 'online',
+        data: dbData,
+        error: null,
+        latencyMs: dbData.latency_ms,
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Database check failed';
+      setDbStatusState({
+        status: 'offline',
+        data: null,
+        error: errorMessage,
+        latencyMs: null,
+      });
+    }
   }, []);
 
   // Initial check and periodic polling every 10s
@@ -57,6 +85,7 @@ export const App: React.FC = () => {
         return (
           <DashboardPage
             statusState={statusState}
+            dbStatusState={dbStatusState}
             onRefreshHealth={performHealthCheck}
             onNavigate={(view) => setActiveView(view)}
           />
@@ -77,6 +106,7 @@ export const App: React.FC = () => {
         return (
           <DashboardPage
             statusState={statusState}
+            dbStatusState={dbStatusState}
             onRefreshHealth={performHealthCheck}
             onNavigate={(view) => setActiveView(view)}
           />

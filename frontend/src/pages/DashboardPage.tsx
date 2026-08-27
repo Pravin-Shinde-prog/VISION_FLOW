@@ -11,17 +11,19 @@ import {
   Radio,
 } from 'lucide-react';
 import { SystemStatus } from '../components/common/SystemStatus';
-import { SystemStatusState } from '../types/health';
+import { SystemStatusState, DatabaseStatusState } from '../types/health';
 import { ViewKey } from '../components/layout/Sidebar';
 
 interface DashboardPageProps {
   statusState: SystemStatusState;
+  dbStatusState?: DatabaseStatusState;
   onRefreshHealth: () => void;
   onNavigate: (view: ViewKey) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   statusState,
+  dbStatusState,
   onRefreshHealth,
   onNavigate,
 }) => {
@@ -67,7 +69,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </div>
 
       {/* Real-time Health Check Section */}
-      <SystemStatus statusState={statusState} onRefresh={onRefreshHealth} />
+      <SystemStatus
+        statusState={statusState}
+        dbStatusState={dbStatusState}
+        onRefresh={onRefreshHealth}
+      />
 
       {/* Feature Groups Status Overview */}
       <div className="rounded-xl border border-slate-800 bg-[#111827] p-6 space-y-4">
