@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -25,4 +27,65 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+/* Dark mode styling for OpenStreetMap tiles in VISION_FLOW Command Center */
+.dark-tiles .leaflet-tile {
+  filter: brightness(0.65) invert(1) contrast(2.5) hue-rotate(195deg) saturate(0.35) brightness(0.7);
+}
+
+/* Custom Leaflet Map Tooltips & Popups */
+.leaflet-popup-content-wrapper {
+  background: #0F172A !important;
+  color: #F8FAFC !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-popup-tip {
+  background: #0F172A !important;
+}
+
+.leaflet-tooltip {
+  background: #0F172A !important;
+  color: #F8FAFC !important;
+  border: 1px solid #334155 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  padding: 3px 6px !important;
+}
+
+/* Camera Node Pulse Keyframes */
+@keyframes camera-pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes camera-pulse-amber {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.marker-pulse-active {
+  animation: camera-pulse-green 2s infinite;
+}
+
+.marker-pulse-warning {
+  animation: camera-pulse-amber 2s infinite;
 }
