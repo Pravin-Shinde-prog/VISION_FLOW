@@ -376,3 +376,76 @@ export async function runANPRBenchmark(): Promise<ANPRBenchmarkResponse> {
 
   return response.json();
 }
+
+import {
+  ReIDMatchRequest,
+  ReIDMatchResult,
+  ReIDObservationPayload,
+  ReIDTrackResponse,
+  ReIDDemoScenarioResponse,
+} from '../types/reid';
+
+/**
+ * Matches two vehicle sightings using multi-feature Re-ID.
+ */
+export async function matchVehicleObservations(
+  req: ReIDMatchRequest
+): Promise<ReIDMatchResult> {
+  const url = `${API_BASE}/api/v1/reid/match`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Re-ID match failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Searches the camera network for sightings matching a target vehicle.
+ */
+export async function trackVehicle(
+  source: ReIDObservationPayload
+): Promise<ReIDTrackResponse> {
+  const url = `${API_BASE}/api/v1/reid/track`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(source),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Vehicle tracking failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches the pre-built multi-camera occluded plate tracking demonstration scenario.
+ */
+export async function fetchReIDDemoScenario(): Promise<ReIDDemoScenarioResponse> {
+  const url = `${API_BASE}/api/v1/reid/demo-scenario`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Re-ID demo scenario: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
