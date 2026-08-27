@@ -131,3 +131,93 @@ export async function fetchNearbyCameras(lat: number, lon: number, radiusKm = 5.
 
   return response.json();
 }
+
+import {
+  SimulationRunRequest,
+  SimulationRunResponse,
+  SimulationStatusResponse,
+  SimulationCleanupResponse,
+} from '../types/simulation';
+import { DetectionListResponse } from '../types/detection';
+
+/**
+ * Triggers a synthetic traffic simulation run.
+ */
+export async function runSimulation(req: SimulationRunRequest): Promise<SimulationRunResponse> {
+  const url = `${API_BASE}/api/v1/simulation/run`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Simulation run failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches current counts of simulated entities.
+ */
+export async function getSimulationStatus(): Promise<SimulationStatusResponse> {
+  const url = `${API_BASE}/api/v1/simulation/status`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch simulation status: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Purges all synthetic simulation records from the database.
+ */
+export async function cleanupSimulation(): Promise<SimulationCleanupResponse> {
+  const url = `${API_BASE}/api/v1/simulation/cleanup`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cleanup failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieves recent detection sightings from all cameras.
+ */
+export async function fetchRecentDetections(params?: {
+  limit?: number;
+  camera_id?: string;
+  plate_number?: string;
+}): Promise<DetectionListResponse> {
+  const query = new URLSearchParams();
+  if (params?.limit) query.append('limit', params.limit.toString());
+  if (params?.camera_id) query.append('camera_id', params.camera_id);
+  if (params?.plate_number) query.append('plate_number', params.plate_number);
+
+  const url = `${API_BASE}/api/v1/detections/recent${query.toString() ? `?${query.toString()}` : ''}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch recent detections: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}

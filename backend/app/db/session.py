@@ -1,5 +1,5 @@
 import time
-from typing import AsyncGenerator, Dict, Any
+from typing import AsyncGenerator, Dict, Any, Optional
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -45,39 +45,44 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-async def check_database_health() -> Dict[str, Any]:
+async def check_database_health(session: Optional[AsyncSession] = None) -> Dict[str, Any]:
     """
     Executes a live query to verify PostgreSQL connectivity and PostGIS availability.
     Returns operational metadata including database name, PostGIS version, and latency.
     """
     start_time = time.perf_counter()
+
+    async def _query(sess: AsyncSession) -> Dict[str, Any]:
+        result = await sess.execute(
+            text("SELECT current_database(), PostGIS_Version();")
+        )
+        row = result.fetchone()
+        latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+        if row:
+            db_name, postgis_ver = row[0], row[1]
+            return {
+                "status": "ok",
+                "database": db_name,
+                "postgis_version": postgis_ver,
+                "latency_ms": latency_ms,
+                "error": None
+            }
+        else:
+            return {
+                "status": "error",
+                "database": settings.POSTGRES_DB,
+                "postgis_version": None,
+                "latency_ms": latency_ms,
+                "error": "Query returned no rows"
+            }
+
     try:
-        async with async_session_factory() as session:
-            # Query current database name and PostGIS version
-            result = await session.execute(
-                text("SELECT current_database(), PostGIS_Version();")
-            )
-            row = result.fetchone()
-
-            latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
-
-            if row:
-                db_name, postgis_ver = row[0], row[1]
-                return {
-                    "status": "ok",
-                    "database": db_name,
-                    "postgis_version": postgis_ver,
-                    "latency_ms": latency_ms,
-                    "error": None
-                }
-            else:
-                return {
-                    "status": "error",
-                    "database": settings.POSTGRES_DB,
-                    "postgis_version": None,
-                    "latency_ms": latency_ms,
-                    "error": "Query returned no rows"
-                }
+        if session is not None:
+            return await _query(session)
+        else:
+            async with async_session_factory() as sess:
+                return await _query(sess)
     except Exception as exc:
         latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
         return {

@@ -1,32 +1,44 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
+from app.db.session import engine, check_database_health, get_db
 from app.api.v1.router import api_v1_router
 from app.schemas.health import HealthResponse, DatabaseHealthResponse
-from app.db.session import engine, check_database_health
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: verification
+    """
+    Lifespan context manager for startup and shutdown events.
+    Verifies database connectivity on startup and cleanly closes the connection pool on shutdown.
+    """
+    print(f"[*] Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    db_health = await check_database_health()
+    if db_health["status"] == "ok":
+        print(f"[+] Connected to PostgreSQL: {db_health['database']} (PostGIS {db_health['postgis_version']}) in {db_health['latency_ms']}ms")
+    else:
+        print(f"[!] Database check warning: {db_health['error']}")
     yield
-    # Shutdown: dispose of database connection pool cleanly
+    print(f"[*] Disposing database engine connection pool for {settings.PROJECT_NAME}...")
     await engine.dispose()
+    print("[+] Database connection pool disposed cleanly.")
 
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description=settings.PROJECT_TITLE,
     version=settings.VERSION,
+    description="City-Wide AI Engine for Multi-Camera ANPR Trajectory Tracking and Urban Traffic Analytics",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
 
-# Set up CORS middleware
+# Configure CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -34,9 +46,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include API v1 router
-app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 
 # Top-level direct health endpoint: GET /api/health
@@ -66,11 +75,14 @@ async def api_health() -> HealthResponse:
     tags=["Health"],
     summary="Top-level Database & PostGIS Health Endpoint"
 )
-async def api_database_health(response: Response) -> DatabaseHealthResponse:
+async def api_database_health(
+    response: Response,
+    db: AsyncSession = Depends(get_db)
+) -> DatabaseHealthResponse:
     """
     Top-level health check endpoint for PostgreSQL & PostGIS status.
     """
-    health_data = await check_database_health()
+    health_data = await check_database_health(session=db)
     if health_data["status"] != "ok":
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
@@ -84,12 +96,5 @@ async def api_database_health(response: Response) -> DatabaseHealthResponse:
     )
 
 
-@app.get("/", tags=["Root"], summary="Root Status")
-async def root():
-    return {
-        "message": f"Welcome to {settings.PROJECT_NAME} API",
-        "version": settings.VERSION,
-        "docs": "/docs",
-        "health": "/api/health",
-        "database_health": "/api/health/database"
-    }
+# Mount API V1 Modular Router
+app.include_router(api_v1_router, prefix=settings.API_V1_STR)

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Cpu,
   Car,
@@ -11,6 +11,8 @@ import {
   Radio,
 } from 'lucide-react';
 import { SystemStatus } from '../components/common/SystemStatus';
+import { SimulationControlCard } from '../components/simulation/SimulationControlCard';
+import { RecentDetectionsTable } from '../components/detections/RecentDetectionsTable';
 import { SystemStatusState, DatabaseStatusState } from '../types/health';
 import { ViewKey } from '../components/layout/Sidebar';
 
@@ -27,9 +29,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onRefreshHealth,
   onNavigate,
 }) => {
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+
+  const handleSimulationCompleted = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
+      {/* Top Operations Banner */}
       <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-[#111827] via-[#131C31] to-[#111827] p-6 lg:p-8 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-2 max-w-3xl">
@@ -61,7 +69,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <Radio className="h-4 w-4 text-blue-400 shrink-0" />
               <div className="text-xs">
                 <p className="text-slate-400 text-[10px] uppercase font-bold">Data Ingestion</p>
-                <p className="font-semibold text-slate-200">Simulated / Prerecorded Ready</p>
+                <p className="font-semibold text-slate-200">Synthetic Pune Network</p>
               </div>
             </div>
           </div>
@@ -74,6 +82,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         dbStatusState={dbStatusState}
         onRefresh={onRefreshHealth}
       />
+
+      {/* Synthetic Traffic & Event Simulator Control */}
+      <SimulationControlCard onSimulationCompleted={handleSimulationCompleted} />
+
+      {/* Database-Backed Recent Detections Sighting Feed */}
+      <RecentDetectionsTable refreshTrigger={refreshTrigger} />
 
       {/* Feature Groups Status Overview */}
       <div className="rounded-xl border border-slate-800 bg-[#111827] p-6 space-y-4">
@@ -110,7 +124,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 1. Smart Edge Vision &amp; ANPR
               </h3>
               <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Adaptive contrast/glare enhancement, license plate localization, PaddleOCR, and RTO plate format compliance.
+                Adaptive contrast/glare enhancement, license plate localization, OCR confidence, and RTO plate compliance.
               </p>
             </div>
             <div className="flex items-center text-[11px] text-blue-400 font-medium pt-1">

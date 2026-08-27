@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, status, Response
+from fastapi import APIRouter, status, Response, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.schemas.health import HealthResponse, DatabaseHealthResponse
-from app.db.session import check_database_health
+from app.db.session import check_database_health, get_db
 
 router = APIRouter(tags=["Health"])
 
@@ -26,12 +27,15 @@ async def get_health() -> HealthResponse:
     response_model=DatabaseHealthResponse,
     summary="Database & PostGIS Health Check"
 )
-async def get_database_health(response: Response) -> DatabaseHealthResponse:
+async def get_database_health(
+    response: Response,
+    db: AsyncSession = Depends(get_db)
+) -> DatabaseHealthResponse:
     """
     Performs a live query against PostgreSQL and verifies PostGIS extension status.
     Returns database name, PostGIS version, and query latency.
     """
-    health_data = await check_database_health()
+    health_data = await check_database_health(session=db)
     if health_data["status"] != "ok":
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
