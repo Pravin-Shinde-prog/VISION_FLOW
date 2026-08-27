@@ -308,3 +308,71 @@ export async function processUploadedFrame(
 
   return response.json();
 }
+
+import {
+  ANPRProcessResponse,
+  ANPRBenchmarkResponse,
+} from '../types/anpr';
+
+/**
+ * Runs end-to-end ANPR OCR pipeline on a sample scenario.
+ */
+export async function processANPRSample(
+  sampleId: string,
+  persist: boolean = false
+): Promise<ANPRProcessResponse> {
+  const url = `${API_BASE}/api/v1/anpr/samples/${encodeURIComponent(sampleId)}/process?persist=${persist}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `ANPR processing failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Uploads a local image file and processes it through the ANPR OCR pipeline.
+ */
+export async function processANPRUpload(
+  file: File,
+  persist: boolean = false
+): Promise<ANPRProcessResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('persist', persist.toString());
+
+  const url = `${API_BASE}/api/v1/anpr/process`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `ANPR upload processing failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Executes automated benchmark evaluation across test scenarios.
+ */
+export async function runANPRBenchmark(): Promise<ANPRBenchmarkResponse> {
+  const url = `${API_BASE}/api/v1/anpr/benchmark`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to run ANPR benchmark: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
