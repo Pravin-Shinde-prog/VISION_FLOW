@@ -6,6 +6,7 @@ from app.models.detection import Detection
 from app.models.watchlist import Watchlist
 from app.models.alert import Alert
 from app.models.trajectory import Trajectory, TrajectoryEvent
+from app.models.ghost_plate import GhostPlateAlert
 
 __all__ = [
     "Camera",
@@ -17,4 +18,5 @@ __all__ = [
     "Alert",
     "Trajectory",
     "TrajectoryEvent",
+    "GhostPlateAlert",
 ]

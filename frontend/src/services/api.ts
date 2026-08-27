@@ -566,3 +566,130 @@ export async function fetchGraphDemoScenarios(): Promise<GraphDemoScenario[]> {
 
   return response.json();
 }
+
+import {
+  GhostPlateAnalysisRequest,
+  GhostPlateAlertRecord,
+  LiveSightingEvaluationRequest,
+  LiveSightingEvaluationResponse,
+  GhostPlateStatusUpdate,
+  GhostPlateScenario,
+} from '../types/ghost_plates';
+
+/**
+ * Analyzes pairwise plate sightings for cloning / ghost anomaly.
+ */
+export async function analyzeGhostPlatePair(
+  req: GhostPlateAnalysisRequest
+): Promise<GhostPlateAlertRecord> {
+  const url = `${API_BASE}/api/v1/ghost-plates/analyze`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Ghost plate analysis failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Evaluates an incoming live plate sighting against previous database sightings.
+ */
+export async function evaluateLivePlateSighting(
+  req: LiveSightingEvaluationRequest
+): Promise<LiveSightingEvaluationResponse> {
+  const url = `${API_BASE}/api/v1/ghost-plates/evaluate-sighting`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Sighting evaluation failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieves list of stored Ghost Plate alerts.
+ */
+export async function fetchGhostPlateAlerts(
+  severity?: string,
+  status?: string,
+  plate?: string
+): Promise<GhostPlateAlertRecord[]> {
+  const query = new URLSearchParams();
+  if (severity) query.append('severity', severity);
+  if (status) query.append('status', status);
+  if (plate) query.append('plate_number', plate);
+
+  const url = `${API_BASE}/api/v1/ghost-plates/alerts?${query.toString()}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ghost plate alerts: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Updates review status for a specific ghost plate alert.
+ */
+export async function updateGhostPlateStatus(
+  alertId: string,
+  status: string,
+  notes?: string
+): Promise<GhostPlateAlertRecord> {
+  const url = `${API_BASE}/api/v1/ghost-plates/alerts/${alertId}`;
+  const payload: GhostPlateStatusUpdate = { status, notes };
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Status update failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieves the 5 reproducible Ghost Plate test scenarios.
+ */
+export async function fetchGhostPlateDemoScenarios(): Promise<GhostPlateScenario[]> {
+  const url = `${API_BASE}/api/v1/ghost-plates/demo-scenarios`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch demo scenarios: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
