@@ -6,6 +6,7 @@ from app.api.v1.simulation import router as simulation_router
 from app.api.v1.edge_vision import router as edge_vision_router
 from app.api.v1.anpr import router as anpr_router
 from app.api.v1.reid import router as reid_router
+from app.api.v1.graph import router as graph_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(health_router, prefix="", tags=["Health"])
@@ -15,3 +16,4 @@ api_v1_router.include_router(simulation_router, prefix="/simulation", tags=["Syn
 api_v1_router.include_router(edge_vision_router, prefix="/edge-vision", tags=["Smart Edge Vision & Preprocessing"])
 api_v1_router.include_router(anpr_router, prefix="/anpr", tags=["ANPR & License Plate OCR"])
 api_v1_router.include_router(reid_router, prefix="/reid", tags=["Multi-Feature Vehicle Re-ID"])
+api_v1_router.include_router(graph_router, prefix="/graph", tags=["Spatio-Temporal Graph Engine"])

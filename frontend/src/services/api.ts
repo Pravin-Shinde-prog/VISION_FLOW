@@ -449,3 +449,120 @@ export async function fetchReIDDemoScenario(): Promise<ReIDDemoScenarioResponse>
 
   return response.json();
 }
+
+import {
+  GraphTopologyResponse,
+  GraphPathResponse,
+  TransitionValidationRequest,
+  TransitionValidationResponse,
+  SequenceValidationRequest,
+  SequenceValidationResponse,
+  GraphDemoScenario,
+} from '../types/graph';
+
+/**
+ * Fetches complete road network graph topology G=(V,E).
+ */
+export async function fetchGraphTopology(): Promise<GraphTopologyResponse> {
+  const url = `${API_BASE}/api/v1/graph/topology`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch graph topology: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Finds shortest directed path between two cameras using Dijkstra's algorithm.
+ */
+export async function findDirectedPath(
+  sourceCameraId: string,
+  targetCameraId: string
+): Promise<GraphPathResponse> {
+  const query = new URLSearchParams({
+    source_camera_id: sourceCameraId,
+    target_camera_id: targetCameraId,
+  });
+  const url = `${API_BASE}/api/v1/graph/path?${query.toString()}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Path search failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Validates physical and temporal transition feasibility between two camera sightings.
+ */
+export async function validateGraphTransition(
+  req: TransitionValidationRequest
+): Promise<TransitionValidationResponse> {
+  const url = `${API_BASE}/api/v1/graph/validate-transition`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Transition validation failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Validates a multi-hop observation sequence.
+ */
+export async function validateObservationSequence(
+  req: SequenceValidationRequest
+): Promise<SequenceValidationResponse> {
+  const url = `${API_BASE}/api/v1/graph/validate-sequence`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Sequence validation failed: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Retrieves pre-configured Spatio-Temporal Graph demonstration scenarios.
+ */
+export async function fetchGraphDemoScenarios(): Promise<GraphDemoScenario[]> {
+  const url = `${API_BASE}/api/v1/graph/demo-scenarios`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch graph demo scenarios: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
